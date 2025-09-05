@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор упущенной выгоды</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 25%, #7c2d12 75%, #dc2626 100%);
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .result-card {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            box-shadow: 0 20px 40px rgba(220, 38, 38, 0.3);
+        }
+        
+        .formula-card {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+        
+        .input-field {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        
+        .scenario-btn {
+            transition: all 0.3s ease;
+            transform: scale(1);
+        }
+        
+        .scenario-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .scenario-btn.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .animate-pulse-slow {
+            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        .counter-animation {
+            transition: all 0.5s ease;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .slide-up {
+            animation: slideUp 0.6s ease-out;
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl md:text-6xl font-bold text-white mb-4">
+                💰 Калькулятор упущенной выгоды
+            </h1>
+            <p class="text-xl text-white/80 max-w-3xl mx-auto leading-relaxed">
+                Узнайте, сколько денег вы теряете, не повышая цены. Универсальный алгоритм для фрилансеров, экспертов и предпринимателей
+            </p>
+        </div>
+
+        <div class="max-w-7xl mx-auto grid lg:grid-cols-3 gap-8">
+            <!-- Input Panel -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Scenario Selection -->
+                <div class="glass-card rounded-2xl p-6">
+                    <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
+                        🎯 Выберите сценарий
+                    </h2>
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <button onclick="setScenario('freelancer')" id="btn-freelancer" class="scenario-btn glass-card rounded-xl p-4 text-white border-2 border-white/20 active">
+                            <div class="text-3xl mb-2">👨‍💻</div>
+                            <div class="font-semibold">Фрилансер</div>
+                            <div class="text-sm text-white/70">Проекты/час</div>
+                        </button>
+                        <button onclick="setScenario('expert')" id="btn-expert" class="scenario-btn glass-card rounded-xl p-4 text-white border-2 border-white/20">
+                            <div class="text-3xl mb-2">🎓</div>
+                            <div class="font-semibold">Эксперт</div>
+                            <div class="text-sm text-white/70">Консультации</div>
+                        </button>
+                        <button onclick="setScenario('business')" id="btn-business" class="scenario-btn glass-card rounded-xl p-4 text-white border-2 border-white/20">
+                            <div class="text-3xl mb-2">🏢</div>
+                            <div class="font-semibold">Бизнес</div>
+                            <div class="text-sm text-white/70">Продукты/услуги</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Current Situation -->
+                <div class="glass-card rounded-2xl p-6">
+                    <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
+                        📊 Текущая ситуация
+                    </h2>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-white/80 mb-3 font-medium">
+                                <span id="price-label">Цена за проект</span> ($)
+                            </label>
+                            <input type="number" id="current-price" value="500" 
+                                   class="input-field w-full px-4 py-4 rounded-xl text-white text-xl font-semibold focus:outline-none"
+                                   placeholder="0">
+                        </div>
+                        <div>
+                            <label class="block text-white/80 mb-3 font-medium">
+                                <span id="quantity-label">Проектов в месяц</span>
+                            </label>
+                            <input type="number" id="current-quantity" value="8" 
+                                   class="input-field w-full px-4 py-4 rounded-xl text-white text-xl font-semibold focus:outline-none"
+                                   placeholder="0">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 p-4 bg-white/10 rounded-xl">
+                        <div class="flex justify-between items-center">
+                            <span class="text-white/80 text-lg">Текущий месячный доход:</span>
+                            <span id="current-income" class="text-white font-bold text-2xl">$4,000</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Price Increase -->
+                <div class="glass-card rounded-2xl p-6">
+                    <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
+                        📈 Планируемое повышение
+                    </h2>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-white/80 mb-3 font-medium">
+                                Повышение цены (%)
+                            </label>
+                            <div class="relative">
+                                <input type="range" id="price-increase" min="5" max="100" value="30" 
+                                       class="w-full h-3 bg-white/20 rounded-lg appearance-none cursor-pointer">
+                                <div class="flex justify-between text-white/60 text-sm mt-2">
+                                    <span>5%</span>
+                                    <span>50%</span>
+                                    <span>100%</span>
+                                </div>
+                            </div>
+                            <div class="text-center mt-4">
+                                <span class="text-white text-3xl font-bold" id="increase-display">+30%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div class="p-4 bg-white/10 rounded-xl text-center">
+                                <div class="text-white/80 mb-1">Новая цена</div>
+                                <div id="new-price" class="text-white font-bold text-xl">$650</div>
+                            </div>
+                            <div class="p-4 bg-white/10 rounded-xl text-center">
+                                <div class="text-white/80 mb-1">Потенциальный доход</div>
+                                <div id="potential-income" class="text-white font-bold text-xl">$5,200</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Scenarios -->
+                <div class="glass-card rounded-2xl p-6">
+                    <h2 class="text-2xl font-bold text-white mb-6">⚡ Быстрые сценарии</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <button onclick="setIncrease(20)" class="p-3 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors">
+                            +20%
+                        </button>
+                        <button onclick="setIncrease(30)" class="p-3 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors">
+                            +30%
+                        </button>
+                        <button onclick="setIncrease(50)" class="p-3 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors">
+                            +50%
+                        </button>
+                        <button onclick="setIncrease(100)" class="p-3 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors">
+                            +100%
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Panel -->
+            <div class="lg:col-span-1">
+                <div class="sticky top-8 space-y-6">
+                    <!-- Main Result -->
+                    <div class="result-card rounded-2xl p-8 text-white text-center slide-up">
+                        <h2 class="text-2xl font-bold mb-4">💸 Упущенная выгода</h2>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <div class="text-white/80 mb-2">В месяц</div>
+                                <div id="monthly-loss" class="text-4xl font-bold counter-animation">$1,200</div>
+                            </div>
+                            
+                            <div class="border-t border-white/30 pt-4">
+                                <div class="text-white/80 mb-2">В год</div>
+                                <div id="yearly-loss" class="text-3xl font-bold counter-animation">$14,400</div>
+                            </div>
+                            
+                            <div class="border-t border-white/30 pt-4">
+                                <div class="text-white/80 mb-2">За 5 лет</div>
+                                <div id="five-year-loss" class="text-2xl font-bold counter-animation">$72,000</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8 p-4 bg-white/20 rounded-xl">
+                            <div class="text-sm text-white/90 mb-2">Каждый день промедления стоит:</div>
+                            <div id="daily-loss" class="text-xl font-bold">$40</div>
+                        </div>
+                    </div>
+
+                    <!-- Formula -->
+                    <div class="formula-card rounded-2xl p-6 text-white">
+                        <h3 class="font-bold mb-4 flex items-center">
+                            🧮 Формула расчёта
+                        </h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="bg-white/20 p-3 rounded-lg font-mono">
+                                Упущенная выгода = P × N × Δ
+                            </div>
+                            <div class="space-y-1 text-white/80">
+                                <div>P = <span id="formula-p">$500</span> (текущая цена)</div>
+                                <div>N = <span id="formula-n">8</span> (количество в месяц)</div>
+                                <div>Δ = <span id="formula-delta">0.30</span> (% повышения)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="space-y-3">
+                        <button onclick="saveCalculation()" class="w-full bg-white text-red-600 font-semibold py-4 px-6 rounded-xl hover:bg-gray-100 transition-colors duration-300">
+                            💾 Сохранить расчёт
+                        </button>
+                        <button onclick="shareResults()" class="w-full bg-white/20 text-white font-semibold py-3 px-6 rounded-xl hover:bg-white/30 transition-colors duration-300">
+                            📤 Поделиться
+                        </button>
+                        <button onclick="resetCalculator()" class="w-full bg-white/10 text-white font-semibold py-3 px-6 rounded-xl hover:bg-white/20 transition-colors duration-300">
+                            🔄 Сбросить
+                        </button>
+                    </div>
+
+                    <!-- Motivation -->
+                    <div class="glass-card rounded-2xl p-6 text-white text-center">
+                        <div class="text-2xl mb-3">⏰</div>
+                        <div class="font-semibold mb-2">Время действовать!</div>
+                        <div class="text-sm text-white/80" id="motivation-text">
+                            Каждый месяц промедления стоит вам $1,200
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Info -->
+        <div class="max-w-4xl mx-auto mt-16">
+            <div class="glass-card rounded-2xl p-8">
+                <h2 class="text-3xl font-bold text-white text-center mb-8">
+                    📚 Как использовать калькулятор
+                </h2>
+                
+                <div class="grid md:grid-cols-3 gap-6 text-white">
+                    <div class="text-center">
+                        <div class="text-4xl mb-4">1️⃣</div>
+                        <h3 class="font-semibold mb-2">Выберите сценарий</h3>
+                        <p class="text-white/80 text-sm">Фрилансер, эксперт или бизнес - калькулятор адаптируется под ваш тип деятельности</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-4xl mb-4">2️⃣</div>
+                        <h3 class="font-semibold mb-2">Введите данные</h3>
+                        <p class="text-white/80 text-sm">Укажите текущую цену и количество клиентов/проектов в месяц</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-4xl mb-4">3️⃣</div>
+                        <h3 class="font-semibold mb-2">Настройте повышение</h3>
+                        <p class="text-white/80 text-sm">Выберите процент повышения цены и увидьте упущенную выгоду</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentScenario = 'freelancer';
+        
+        const scenarios = {
+            freelancer: {
+                priceLabel: 'Цена за проект',
+                quantityLabel: 'Проектов в месяц',
+                defaultPrice: 500,
+                defaultQuantity: 8
+            },
+            expert: {
+                priceLabel: 'Цена за консультацию',
+                quantityLabel: 'Консультаций в месяц',
+                defaultPrice: 150,
+                defaultQuantity: 20
+            },
+            business: {
+                priceLabel: 'Средний чек',
+                quantityLabel: 'Продаж в месяц',
+                defaultPrice: 100,
+                defaultQuantity: 50
+            }
+        };
+        
+        function setScenario(scenario) {
+            currentScenario = scenario;
+            
+            // Update button states
+            document.querySelectorAll('.scenario-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${scenario}`).classList.add('active');
+            
+            // Update labels and defaults
+            const config = scenarios[scenario];
+            document.getElementById('price-label').textContent = config.priceLabel;
+            document.getElementById('quantity-label').textContent = config.quantityLabel;
+            document.getElementById('current-price').value = config.defaultPrice;
+            document.getElementById('current-quantity').value = config.defaultQuantity;
+            
+            updateCalculations();
+        }
+        
+        function setIncrease(percentage) {
+            document.getElementById('price-increase').value = percentage;
+            updateCalculations();
+        }
+        
+        function updateCalculations() {
+            const currentPrice = parseFloat(document.getElementById('current-price').value) || 0;
+            const currentQuantity = parseFloat(document.getElementById('current-quantity').value) || 0;
+            const increasePercent = parseFloat(document.getElementById('price-increase').value) || 0;
+            
+            // Current income
+            const currentIncome = currentPrice * currentQuantity;
+            
+            // New calculations
+            const increaseDecimal = increasePercent / 100;
+            const newPrice = currentPrice * (1 + increaseDecimal);
+            const potentialIncome = newPrice * currentQuantity;
+            
+            // Lost opportunity
+            const monthlyLoss = potentialIncome - currentIncome;
+            const yearlyLoss = monthlyLoss * 12;
+            const fiveYearLoss = yearlyLoss * 5;
+            const dailyLoss = monthlyLoss / 30;
+            
+            // Update display
+            document.getElementById('current-income').textContent = `$${currentIncome.toLocaleString()}`;
+            document.getElementById('increase-display').textContent = `+${increasePercent}%`;
+            document.getElementById('new-price').textContent = `$${Math.round(newPrice).toLocaleString()}`;
+            document.getElementById('potential-income').textContent = `$${Math.round(potentialIncome).toLocaleString()}`;
+            
+            document.getElementById('monthly-loss').textContent = `$${Math.round(monthlyLoss).toLocaleString()}`;
+            document.getElementById('yearly-loss').textContent = `$${Math.round(yearlyLoss).toLocaleString()}`;
+            document.getElementById('five-year-loss').textContent = `$${Math.round(fiveYearLoss).toLocaleString()}`;
+            document.getElementById('daily-loss').textContent = `$${Math.round(dailyLoss)}`;
+            
+            // Update formula
+            document.getElementById('formula-p').textContent = `$${currentPrice}`;
+            document.getElementById('formula-n').textContent = currentQuantity;
+            document.getElementById('formula-delta').textContent = increaseDecimal.toFixed(2);
+            
+            // Update motivation
+            document.getElementById('motivation-text').textContent = 
+                `Каждый месяц промедления стоит вам $${Math.round(monthlyLoss).toLocaleString()}`;
+        }
+        
+        function saveCalculation() {
+            const currentPrice = document.getElementById('current-price').value;
+            const currentQuantity = document.getElementById('current-quantity').value;
+            const increasePercent = document.getElementById('price-increase').value;
+            const monthlyLoss = document.getElementById('monthly-loss').textContent;
+            
+            const report = `
+📊 РАСЧЁТ УПУЩЕННОЙ ВЫГОДЫ
+
+Сценарий: ${currentScenario.charAt(0).toUpperCase() + currentScenario.slice(1)}
+Текущая цена: $${currentPrice}
+Количество в месяц: ${currentQuantity}
+Планируемое повышение: +${increasePercent}%
+
+💸 УПУЩЕННАЯ ВЫГОДА:
+В месяц: ${monthlyLoss}
+В год: ${document.getElementById('yearly-loss').textContent}
+За 5 лет: ${document.getElementById('five-year-loss').textContent}
+
+⏰ Каждый день промедления стоит: ${document.getElementById('daily-loss').textContent}
+
+Формула: P × N × Δ = $${currentPrice} × ${currentQuantity} × ${(parseFloat(increasePercent)/100).toFixed(2)}
+            `;
+            
+            alert('💾 Расчёт сохранён!\n\n' + report);
+        }
+        
+        function shareResults() {
+            const monthlyLoss = document.getElementById('monthly-loss').textContent;
+            const yearlyLoss = document.getElementById('yearly-loss').textContent;
+            
+            const shareText = `💰 Я рассчитал свою упущенную выгоду!\n\nЕсли не повышу цены:\n📉 Теряю ${monthlyLoss} в месяц\n📉 Теряю ${yearlyLoss} в год\n\n⏰ Время действовать!`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Калькулятор упущенной выгоды',
+                    text: shareText
+                });
+            } else {
+                navigator.clipboard.writeText(shareText).then(() => {
+                    alert('📋 Результаты скопированы в буфер обмена!');
+                });
+            }
+        }
+        
+        function resetCalculator() {
+            setScenario('freelancer');
+            document.getElementById('price-increase').value = 30;
+            updateCalculations();
+        }
+        
+        // Event listeners
+        document.getElementById('current-price').addEventListener('input', updateCalculations);
+        document.getElementById('current-quantity').addEventListener('input', updateCalculations);
+        document.getElementById('price-increase').addEventListener('input', updateCalculations);
+        
+        // Initialize
+        setScenario('freelancer');
+        updateCalculations();
+        
+        // Add some visual flair
+        setInterval(() => {
+            const motivationCard = document.querySelector('.glass-card:last-child');
+            motivationCard.classList.add('animate-pulse-slow');
+            setTimeout(() => motivationCard.classList.remove('animate-pulse-slow'), 3000);
+        }, 10000);
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97a5f49ed0cc4d91',t:'MTc1NzA3NzcwOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
